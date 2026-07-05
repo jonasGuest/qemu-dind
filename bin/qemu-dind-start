@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Define VM image path
+VM_IMAGE="/opt/alpine-docker.qcow2"
+if [ ! -f "$VM_IMAGE" ]; then
+  echo "Error: VM image $VM_IMAGE does not exist." >&2
+  exit 1
+fi
+
+# Ensure log directory exists
+mkdir -p /var/log
+
+# Start QEMU in background using setsid and redirect output
+setsid qemu-system-x86_64 \
+  -enable-kvm \
+  -m 2G \
+  -smp 2 \
+  -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22,hostfwd=tcp::2375-:2375,hostfwd=tcp::8080-:80 \
+  -drive file="$VM_IMAGE",media=disk,if=virtio \
+  -nographic > /var/log/qemu-dind.log 2>&1 &
+
+QEMU_PID=$!
+echo $QEMU_PID > /var/run/qemu-dind.pid
+echo "QEMU VM started in background with PID $QEMU_PID. Logs redirected to /var/log/qemu-dind.log"

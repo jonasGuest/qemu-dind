@@ -1,0 +1,27 @@
+#!/bin/bash
+
+PID_FILE="/var/run/qemu-dind.pid"
+RUNNING=false
+QEMU_PID=""
+
+if [ -f "$PID_FILE" ]; then
+  QEMU_PID=$(cat "$PID_FILE")
+  if kill -0 "$QEMU_PID" 2>/dev/null; then
+    RUNNING=true
+  fi
+else
+  # Fallback to check if qemu-system-x86_64 process exists
+  QEMU_PID=$(pgrep qemu-system-x86_64)
+  if [ -n "$QEMU_PID" ]; then
+    RUNNING=true
+  fi
+fi
+
+if [ "$RUNNING" = true ]; then
+  PIDS=$(echo "$QEMU_PID" | xargs)
+  echo "VM is running (PID: $PIDS)."
+  exit 0
+else
+  echo "VM is not running."
+  exit 1
+fi

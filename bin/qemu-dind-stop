@@ -1,0 +1,31 @@
+#!/bin/bash
+
+PID_FILE="/var/run/qemu-dind.pid"
+
+if [ ! -f "$PID_FILE" ]; then
+  # Fallback: check if qemu-system-x86_64 is running
+  QEMU_PID=$(pgrep qemu-system-x86_64)
+  if [ -z "$QEMU_PID" ]; then
+    echo "No running QEMU VM found."
+    exit 0
+  fi
+else
+  QEMU_PID=$(cat "$PID_FILE")
+fi
+
+echo "Stopping QEMU VM (PID: $QEMU_PID)..."
+kill -15 "$QEMU_PID" 2>/dev/null
+
+# Wait up to 10 seconds for graceful shutdown
+for i in {1..10}; do
+  if ! kill -0 "$QEMU_PID" 2>/dev/null; then
+    echo "QEMU VM stopped gracefully."
+    rm -f "$PID_FILE"
+    exit 0
+  fi
+  sleep 1
+done
+
+echo "VM did not exit gracefully, killing forcefully..."
+kill -9 "$QEMU_PID" 2>/dev/null
+rm -f "$PID_FILE"
