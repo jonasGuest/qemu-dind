@@ -6,7 +6,30 @@ if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
   SUDO="sudo"
 fi
 
+# Stop SSH tunnel using ControlMaster socket if it exists
+SOCKET_FILE="/tmp/qemu-dind-ssh.sock-$(id -u)"
+if [ -S "$SOCKET_FILE" ]; then
+  echo "Stopping SSH tunnel..."
+  ssh -S "$SOCKET_FILE" -O exit -p 2222 root@127.0.0.1 2>/dev/null
+  rm -f "$SOCKET_FILE"
+fi
+
+# Fallback: kill any remaining ssh tunnels matching the pattern
+for cmdfile in /proc/[0-9]*/cmdline; do
+  if [ -f "$cmdfile" ]; then
+    cmd=$(tr '\0' ' ' < "$cmdfile" 2>/dev/null)
+    if [[ "$cmd" == *"ssh "* && "$cmd" == *"-p 2222"* && "$cmd" == *"root@127.0.0.1"* ]]; then
+      pid=$(basename "$(dirname "$cmdfile")")
+      if [ -n "$pid" ] && [ "$pid" -ne "$$" ]; then
+        echo "Killing leftover SSH tunnel process (PID: $pid)..."
+        kill "$pid" 2>/dev/null
+      fi
+    fi
+  fi
+done
+
 PID_FILE="/var/run/qemu-dind.pid"
+
 
 if [ ! -f "$PID_FILE" ]; then
   # Fallback: check if qemu-system-x86_64 is running

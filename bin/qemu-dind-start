@@ -48,10 +48,12 @@ for i in {30000..30020}; do
   PORTS="$PORTS -L $i:127.0.0.1:$i"
 done
 
-# Establish the background SSH tunnel using sshpass
+# Establish the background SSH tunnel using sshpass and ControlMaster
 sshpass -p "alpine" ssh \
   -o StrictHostKeyChecking=no \
   -o UserKnownHostsFile=/dev/null \
+  -M -S /tmp/qemu-dind-ssh.sock-$(id -u) \
   -fnNT -p 2222 $PORTS root@127.0.0.1
 
 echo "SSH tunnel established in the background."
+
