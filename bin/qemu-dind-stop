@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Use sudo if command exists and we are not root
+SUDO=""
+if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+  SUDO="sudo"
+fi
+
 PID_FILE="/var/run/qemu-dind.pid"
 
 if [ ! -f "$PID_FILE" ]; then
@@ -14,18 +20,18 @@ else
 fi
 
 echo "Stopping QEMU VM (PID: $QEMU_PID)..."
-sudo kill -15 "$QEMU_PID" 2>/dev/null
+$SUDO kill -15 "$QEMU_PID" 2>/dev/null
 
 # Wait up to 10 seconds for graceful shutdown
 for i in {1..10}; do
-  if ! sudo kill -0 "$QEMU_PID" 2>/dev/null; then
+  if ! $SUDO kill -0 "$QEMU_PID" 2>/dev/null; then
     echo "QEMU VM stopped gracefully."
-    sudo rm -f "$PID_FILE"
+    $SUDO rm -f "$PID_FILE"
     exit 0
   fi
   sleep 1
 done
 
 echo "VM did not exit gracefully, killing forcefully..."
-sudo kill -9 "$QEMU_PID" 2>/dev/null
-sudo rm -f "$PID_FILE"
+$SUDO kill -9 "$QEMU_PID" 2>/dev/null
+$SUDO rm -f "$PID_FILE"

@@ -3,33 +3,32 @@
 # Avoid interactive prompts during package installation
 export DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies: QEMU and the Docker client
-sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+# Use sudo if command exists and we are not root
+SUDO=""
+if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+  SUDO="sudo"
+fi
+
+# Install minimal runtime dependencies: QEMU, Docker client, curl
+echo "Installing minimal runtime dependencies..."
+$SUDO apt-get update && $SUDO apt-get install -y --no-install-recommends \
     qemu-system-x86 \
-    qemu-utils \
     docker.io \
-    libguestfs-tools \
     ca-certificates \
-    linux-image-generic \
     curl
 
-sudo mkdir -p /opt
-sudo curl -L "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.0-x86_64-bios-cloudinit-r0.qcow2" -o /opt/alpine-docker.qcow2
+# Download pre-built image from GitHub Release assets
+REPO="${REPO:-jonasGuest/qemu-dind}"
 
-sudo qemu-img resize /opt/alpine-docker.qcow2 10G
+IMAGE_URL="https://github.com/${REPO}/releases/latest/download/alpine-docker.qcow2"
 
-sudo guestfish -a /opt/alpine-docker.qcow2 --rw <<EOF
-run
-e2fsck-f /dev/sda
-resize2fs /dev/sda
-exit
-EOF
+echo "Downloading pre-built QEMU VM image from ${IMAGE_URL}..."
+$SUDO mkdir -p /opt
+$SUDO curl -L "${IMAGE_URL}" -o /opt/alpine-docker.qcow2
 
-sudo virt-customize -a /opt/alpine-docker.qcow2 \
-   --run-command "apk del cloud-init" \
-   --install openssh,docker \
-   --run-command "rc-update add sshd default" \
-   --run-command "rc-update add docker default" \
-   --run-command "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config" \
-   --run-command "echo 'DOCKER_OPTS=\"-H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock\"' >> /etc/conf.d/docker" \
-   --root-password password:alpine
+if [ $? -ne 0 ] || [ ! -f /opt/alpine-docker.qcow2 ]; then
+  echo "Error: Failed to download the pre-built image from GitHub assets." >&2
+  exit 1
+fi
+
+echo "Setup completed successfully! VM image downloaded to /opt/alpine-docker.qcow2."

@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Use sudo if command exists and we are not root
+SUDO=""
+if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+  SUDO="sudo"
+fi
+
 # Define VM image path
 VM_IMAGE="/opt/alpine-docker.qcow2"
 if [ ! -f "$VM_IMAGE" ]; then
@@ -8,13 +14,13 @@ if [ ! -f "$VM_IMAGE" ]; then
 fi
 
 # Ensure log directory exists
-sudo mkdir -p /var/log
+$SUDO mkdir -p /var/log
 
 # Start QEMU in background using setsid and redirect output under sudo
-sudo sh -c 'setsid qemu-system-x86_64 \
+$SUDO sh -c 'setsid qemu-system-x86_64 \
   -m 2G \
   -smp 2 \
-  -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22,hostfwd=tcp::2375-:2375,hostfwd=tcp::8080-:80 \
+  -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22,hostfwd=tcp::2375-:2375 \
   -drive file="'"$VM_IMAGE"'",media=disk,if=virtio \
   -nographic > /var/log/qemu-dind.log 2>&1 &'
 
@@ -23,9 +29,25 @@ sleep 1
 QEMU_PID=$(pgrep -f "qemu-system-x86_64.*alpine-docker.qcow2")
 
 if [ -n "$QEMU_PID" ]; then
-  echo "$QEMU_PID" | sudo tee /var/run/qemu-dind.pid > /dev/null
+  echo "$QEMU_PID" | $SUDO tee /var/run/qemu-dind.pid > /dev/null
   echo "QEMU VM started in background with PID $QEMU_PID. Logs redirected to /var/log/qemu-dind.log"
 else
   echo "Failed to start QEMU VM. Check /var/log/qemu-dind.log"
   exit 1
 fi
+
+echo "Generating port forwarding rules for ports 30000-30020..."
+
+# Generate the port forwarding arguments
+PORTS=""
+for i in {30000..30020}; do
+  PORTS="$PORTS -L $i:127.0.0.1:$i"
+done
+
+# Establish the background SSH tunnel using sshpass
+sshpass -p "alpine" ssh \
+  -o StrictHostKeyChecking=no \
+  -o UserKnownHostsFile=/dev/null \
+  -fnNT -p 2222 $PORTS root@127.0.0.1
+
+echo "SSH tunnel established in the background."
