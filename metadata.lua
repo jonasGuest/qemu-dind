@@ -2,7 +2,7 @@ PLUGIN = {
     name        = "qemu-dind",
     version     = "0.1.0",
     description = "QEMU-based Docker-in-Docker (DinD) control scripts",
-    author      = "developer",
+    author      = "Jonas Gastecker",
     license     = "MIT",
-    homepage    = "https://github.com/your-username/your-repo-name"
+    homepage    = "https://github.com/jonasGuest/qemu-dind"
 }
