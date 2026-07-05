@@ -8,17 +8,25 @@ if [ ! -f "$VM_IMAGE" ]; then
 fi
 
 # Ensure log directory exists
-mkdir -p /var/log
+sudo mkdir -p /var/log
 
-# Start QEMU in background using setsid and redirect output
-setsid qemu-system-x86_64 \
+# Start QEMU in background using setsid and redirect output under sudo
+sudo sh -c 'setsid qemu-system-x86_64 \
   -enable-kvm \
   -m 2G \
   -smp 2 \
   -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22,hostfwd=tcp::2375-:2375,hostfwd=tcp::8080-:80 \
-  -drive file="$VM_IMAGE",media=disk,if=virtio \
-  -nographic > /var/log/qemu-dind.log 2>&1 &
+  -drive file="'"$VM_IMAGE"'",media=disk,if=virtio \
+  -nographic > /var/log/qemu-dind.log 2>&1 &'
 
-QEMU_PID=$!
-echo $QEMU_PID > /var/run/qemu-dind.pid
-echo "QEMU VM started in background with PID $QEMU_PID. Logs redirected to /var/log/qemu-dind.log"
+# Wait a moment for QEMU to start up and then locate its PID
+sleep 1
+QEMU_PID=$(pgrep -f "qemu-system-x86_64.*alpine-docker.qcow2")
+
+if [ -n "$QEMU_PID" ]; then
+  echo "$QEMU_PID" | sudo tee /var/run/qemu-dind.pid > /dev/null
+  echo "QEMU VM started in background with PID $QEMU_PID. Logs redirected to /var/log/qemu-dind.log"
+else
+  echo "Failed to start QEMU VM. Check /var/log/qemu-dind.log"
+  exit 1
+fi

@@ -4,7 +4,7 @@
 export DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies: QEMU and the Docker client
-apt-get update && apt-get install -y --no-install-recommends \
+sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     qemu-system-x86 \
     qemu-utils \
     docker.io \
@@ -13,18 +13,19 @@ apt-get update && apt-get install -y --no-install-recommends \
     linux-image-generic \
     curl
 
-curl "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.0-x86_64-bios-cloudinit-r0.qcow2" -o /opt/alpine-docker.qcow2
+sudo mkdir -p /opt
+sudo curl -L "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.0-x86_64-bios-cloudinit-r0.qcow2" -o /opt/alpine-docker.qcow2
 
-qemu-img resize /opt/alpine-docker.qcow2 10G
+sudo qemu-img resize /opt/alpine-docker.qcow2 10G
 
-guestfish -a /opt/alpine-docker.qcow2 --rw <<EOF
+sudo guestfish -a /opt/alpine-docker.qcow2 --rw <<EOF
 run
 e2fsck-f /dev/sda
 resize2fs /dev/sda
 exit
 EOF
 
-virt-customize -a /opt/alpine-docker.qcow2 \
+sudo virt-customize -a /opt/alpine-docker.qcow2 \
    --run-command "apk del cloud-init" \
    --install openssh,docker \
    --run-command "rc-update add sshd default" \

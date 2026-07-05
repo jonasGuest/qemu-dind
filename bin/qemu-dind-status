@@ -6,12 +6,12 @@ QEMU_PID=""
 
 if [ -f "$PID_FILE" ]; then
   QEMU_PID=$(cat "$PID_FILE")
-  if kill -0 "$QEMU_PID" 2>/dev/null; then
+  if sudo kill -0 "$QEMU_PID" 2>/dev/null; then
     RUNNING=true
   fi
 else
   # Fallback to check if qemu-system-x86_64 process exists
-  QEMU_PID=$(pgrep qemu-system-x86_64)
+  QEMU_PID=$(pgrep -f "qemu-system-x86_64.*alpine-docker.qcow2")
   if [ -n "$QEMU_PID" ]; then
     RUNNING=true
   fi
