@@ -12,7 +12,6 @@ sudo mkdir -p /var/log
 
 # Start QEMU in background using setsid and redirect output under sudo
 sudo sh -c 'setsid qemu-system-x86_64 \
-  -enable-kvm \
   -m 2G \
   -smp 2 \
   -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22,hostfwd=tcp::2375-:2375,hostfwd=tcp::8080-:80 \
