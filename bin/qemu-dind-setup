@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# Avoid interactive prompts during package installation
+export DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies: QEMU and the Docker client
+apt-get update && apt-get install -y --no-install-recommends \
+    qemu-system-x86 \
+    qemu-utils \
+    docker.io \
+    libguestfs-tools \
+    ca-certificates \
+    linux-image-generic \
+    curl
+
 curl "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.0-x86_64-bios-cloudinit-r0.qcow2" -o /opt/alpine-docker.qcow2
 
 qemu-img resize /opt/alpine-docker.qcow2 10G
