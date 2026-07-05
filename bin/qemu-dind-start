@@ -36,9 +36,9 @@ else
   exit 1
 fi
 
-echo "Sleeping for 60 seconds to give the vm time to boot"
+echo "Sleeping for 120 seconds to give the vm time to boot"
 
-sleep 60
+sleep 120
 
 echo "Generating port forwarding rules for ports 30000-30020..."
 

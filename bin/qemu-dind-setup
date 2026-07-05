@@ -33,3 +33,5 @@ if [ $? -ne 0 ] || [ ! -f "${VM_FILE}" ]; then
 fi
 
 echo "Setup completed successfully! VM image downloaded to /opt/alpine-docker.qcow2."
+
+./qemu-dind-start
