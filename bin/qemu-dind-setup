@@ -34,4 +34,4 @@ fi
 
 echo "Setup completed successfully! VM image downloaded to /opt/alpine-docker.qcow2."
 
-./qemu-dind-start
+qemu-dind-start || ./qemu-dind-start
