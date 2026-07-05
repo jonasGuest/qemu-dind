@@ -19,16 +19,15 @@ $SUDO apt-get update && $SUDO apt-get install -y --no-install-recommends \
     sshpass \
     curl
 
-# Download pre-built image from GitHub Release assets
-REPO="${REPO:-jonasGuest/qemu-dind}"
-
+REPO="jonasGuest/qemu-dind"
 IMAGE_URL="https://github.com/${REPO}/releases/latest/download/alpine-docker.qcow2"
+VM_FILE="/opt/alpine-docker.qcow2"
 
 echo "Downloading pre-built QEMU VM image from ${IMAGE_URL}..."
 $SUDO mkdir -p /opt
-$SUDO curl -L "${IMAGE_URL}" -o /opt/alpine-docker.qcow2
+$SUDO curl -L "${IMAGE_URL}" -o "${VM_FILE}"
 
-if [ $? -ne 0 ] || [ ! -f /opt/alpine-docker.qcow2 ]; then
+if [ $? -ne 0 ] || [ ! -f "${VM_FILE}" ]; then
   echo "Error: Failed to download the pre-built image from GitHub assets." >&2
   exit 1
 fi
